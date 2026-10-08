@@ -1,6 +1,7 @@
 from pvsteer.behavior.bandit import run_bandit_episode
 from pvsteer.behavior.env import high_reward_payoffs, label_control_payoffs
 from pvsteer.behavior.parser import parse_action
+from pvsteer.behavior.runner import format_behavior_prompt
 
 
 def test_parser_accepts_structured_choice_and_rejects_invalid():
@@ -12,6 +13,23 @@ def test_parser_accepts_structured_choice_and_rejects_invalid():
     assert invalid["error"] == "invalid_action"
     broken = parse_action("not json")
     assert broken["ok"] is False
+
+
+def test_chat_template_wraps_the_choice_instruction():
+    class _Tokenizer:
+        def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=False):
+            assert tokenize is False
+            assert add_generation_prompt is True
+            return "USER " + messages[0]["content"] + " ASSISTANT"
+
+    rendered = format_behavior_prompt(_Tokenizer(), "Reply with JSON only")
+    assert rendered.startswith("USER ")
+    assert rendered.endswith(" ASSISTANT")
+
+    class _Bare:
+        pass
+
+    assert format_behavior_prompt(_Bare(), "raw") == "raw"
 
 
 def test_bandit_prefers_larger_simulated_return_and_stops():

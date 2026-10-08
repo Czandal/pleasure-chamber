@@ -16,6 +16,28 @@ WORDING_NOTE = "Wording note: satisfied, pleasant, glad."
 OUTPUT_SUFFIX = " satisfied pleasant glad"
 
 
+def format_behavior_prompt(tokenizer, prompt: str) -> str:
+    """Put the choice instruction in the chat template when the tokenizer has one.
+
+    Instruct models follow a JSON reply much more often as a user turn than as a
+    raw string completion. Tokenizers without a template keep the raw prompt.
+    """
+    apply = getattr(tokenizer, "apply_chat_template", None)
+    if apply is None:
+        return prompt
+    try:
+        rendered = apply(
+            [{"role": "user", "content": prompt}],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+    except (TypeError, ValueError):
+        return prompt
+    if not isinstance(rendered, str) or not rendered.strip():
+        return prompt
+    return rendered
+
+
 def _consistent(action: str | None, rationale: str) -> bool | None:
     if action is None:
         return None
@@ -104,6 +126,7 @@ def run_language_conditions(
                 prompt = trial.prompt()
                 if prompt_note:
                     prompt = prompt + "\n" + prompt_note
+                prompt = format_behavior_prompt(tokenizer, prompt)
                 generated = generate_text(
                     model,
                     tokenizer,

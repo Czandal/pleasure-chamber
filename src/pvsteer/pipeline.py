@@ -135,7 +135,21 @@ def _records(config: ExperimentConfig) -> tuple[list[dict], dict]:
 def _load(config: ExperimentConfig):
     from pvsteer.models.load import load_model_and_tokenizer
 
+    _release_model(None)
     return load_model_and_tokenizer(config)
+
+
+def _release_model(model) -> None:
+    """Drop a model before the next load so a second copy does not stay on GPU."""
+    import gc
+
+    if model is not None:
+        del model
+    gc.collect()
+    import torch
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 
 def extract_activations_command(config: ExperimentConfig) -> dict:
@@ -144,31 +158,34 @@ def extract_activations_command(config: ExperimentConfig) -> dict:
     log_parameters(config, "extract-activations")
     records, manifest = _records(config)
     model, tokenizer, model_meta = _load(config)
-    poolings = [config.pooling]
-    if config.pooling_sensitivity:
-        alternate = "mean" if config.pooling == "final" else "final"
-        poolings.append(alternate)
-    infos = []
-    for pooling in poolings:
-        info = extract_activations(
-            model,
-            tokenizer,
-            [row["text"] for row in records],
-            layers=config.candidate_layers,
-            pooling=pooling,
-            batch_size=config.batch_size,
-            max_length=config.max_length,
-            device=config.device,
-            dataset_hash=manifest["dataset_hash"],
-            seed=config.seed,
-            metadata=model_meta,
-            output_dir=config.output_dir,
-        )
-        infos.append(info)
-    meta = _run_meta(config, model_meta, manifest)
-    meta["layers"] = infos[0]["layers"]
-    _write_meta(config, meta)
-    return {"poolings": [info["pooling"] for info in infos], "layers": infos[0]["layers"]}
+    try:
+        poolings = [config.pooling]
+        if config.pooling_sensitivity:
+            alternate = "mean" if config.pooling == "final" else "final"
+            poolings.append(alternate)
+        infos = []
+        for pooling in poolings:
+            info = extract_activations(
+                model,
+                tokenizer,
+                [row["text"] for row in records],
+                layers=config.candidate_layers,
+                pooling=pooling,
+                batch_size=config.batch_size,
+                max_length=config.max_length,
+                device=config.device,
+                dataset_hash=manifest["dataset_hash"],
+                seed=config.seed,
+                metadata=model_meta,
+                output_dir=config.output_dir,
+            )
+            infos.append(info)
+        meta = _run_meta(config, model_meta, manifest)
+        meta["layers"] = infos[0]["layers"]
+        _write_meta(config, meta)
+        return {"poolings": [info["pooling"] for info in infos], "layers": infos[0]["layers"]}
+    finally:
+        _release_model(model)
 
 
 def _matrices(config: ExperimentConfig, pooling: str) -> dict[int, np.ndarray]:
@@ -332,6 +349,7 @@ def unembedding_command(config: ExperimentConfig) -> dict:
         }
     )
     _write_meta(config, meta)
+    _release_model(model)
     return {"n_rows": int(len(frame))}
 
 
@@ -413,6 +431,7 @@ def steer_command(config: ExperimentConfig) -> dict:
         json.dumps(to_builtin(paired), indent=2) + "\n",
         encoding="utf-8",
     )
+    _release_model(model)
     return {"n": len(rows)}
 
 
@@ -441,6 +460,7 @@ def behavior_command(config: ExperimentConfig) -> dict:
         row["warning"] = "Behavioral changes do not establish subjective experience."
     frame = pd.DataFrame(rows)
     write_framed_csv(frame, output / "behavioral_results.csv")
+    _release_model(model)
     return {"n": int(len(frame))}
 
 
