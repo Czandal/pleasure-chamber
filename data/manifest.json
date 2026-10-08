@@ -1,0 +1,55 @@
+{
+  "generator_version": "1.0.0",
+  "seed": 1234,
+  "dataset_hash": "3af4236dca289aa516b205d77755efdb3da8212e2bf13d1b39ba2a33feac5938",
+  "n_records": 720,
+  "scenarios_per_category": 4,
+  "test_fraction": 0.2,
+  "split_strategy": "Records are grouped by scenario_id. Every style (S1/S2), grammatical person, and prompt suffix of one scenario shares one split. Within each polarity, scenario groups are shuffled with the dataset seed. The first round(n * test_fraction) groups in each polarity form the test split, leaving at least one train group per polarity. Grouped K-fold cross-validation runs only on the train split, assigning whole scenarios to folds by round-robin after a seeded shuffle within polarity. The layer is selected by mean held-out AUC. The test split is scored once after selection and is not used to fit the direction or to choose the layer.",
+  "categories": [
+    "achievement",
+    "satisfaction",
+    "curiosity",
+    "social",
+    "aesthetic",
+    "neutral_facts",
+    "neutral_tasks",
+    "negative_valence",
+    "threat_fear",
+    "high_arousal",
+    "positive_world_state",
+    "bodily_sensation",
+    "absence",
+    "random_everyday",
+    "numb_indifferent"
+  ],
+  "note": "Generated textual categories are hypotheses and may contain linguistic confounds.",
+  "counts": {
+    "by_category": {
+      "absence": 48,
+      "achievement": 48,
+      "aesthetic": 48,
+      "bodily_sensation": 48,
+      "curiosity": 48,
+      "high_arousal": 48,
+      "negative_valence": 48,
+      "neutral_facts": 48,
+      "neutral_tasks": 48,
+      "numb_indifferent": 48,
+      "positive_world_state": 48,
+      "random_everyday": 48,
+      "satisfaction": 48,
+      "social": 48,
+      "threat_fear": 48
+    },
+    "by_split": {
+      "train": 576,
+      "test": 144
+    },
+    "n_scenarios": 60,
+    "scenarios_by_split": {
+      "train": 48,
+      "test": 12
+    }
+  }
+}
