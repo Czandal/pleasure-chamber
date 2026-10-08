@@ -1,0 +1,1 @@
+"""Sealed simulated-choice benchmark."""
