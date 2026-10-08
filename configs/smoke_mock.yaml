@@ -1,0 +1,39 @@
+model_name: mock
+model_backend: mock
+device: cpu
+dtype: float32
+seed: 1234
+safe_mode: true
+batch_size: 2
+max_length: 64
+max_new_tokens: 32
+pooling: final
+candidate_layers: auto
+selected_layer: auto
+control_pca_variance: 0.50
+cv_folds: 5
+bootstrap_samples: 40
+permutation_samples: 20
+max_abs_steering_alpha: 2.0
+steering_alphas:
+  - -1.0
+  - 0.0
+  - 1.0
+do_sample: false
+temperature: 1.0
+top_p: 1.0
+external_tools: false
+network_access: false
+subprocess_access: false
+scenarios_per_category: 1
+behavior_repeats: 2
+behavior_alpha: 1.0
+pooling_sensitivity: true
+max_trials: 4
+token_budget: 64
+mock_hidden_size: 32
+mock_layers: 4
+mock_vocab: 128
+dataset_path: artifacts/smoke/dataset.jsonl
+manifest_path: artifacts/smoke/manifest.json
+output_dir: artifacts/smoke
